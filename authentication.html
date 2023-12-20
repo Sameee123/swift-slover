@@ -1,0 +1,122 @@
+import React from "react";
+import { Formik } from "formik";
+import { connect } from "react-redux";
+import { useHistory } from "react-router-dom";
+import * as yup from "yup";
+import { Form } from "react-bootstrap";
+import { useSnackbar } from "notistack";
+import { UserAuth } from "../../Redux/User/actionCreators";
+import { Link } from "react-router-dom";
+import "./index.css";
+
+const mapStateToProps = (state) => {
+  return {
+    userMeta: state.userReducer,
+  };
+};
+
+const Login = (props) => {
+  const history = useHistory();
+  const { enqueueSnackbar } = useSnackbar();
+  const LoginSchema = yup.object().shape({
+    Email: yup
+      .string()
+      .email()
+      .required("Please provide the email."),
+    Password: yup.string().required("Please provide the password."),
+  });
+
+  let initialValues = {
+    Email: "",
+    Password: "",
+  };
+  const onSubmit = (values, { setSubmitting }) => {
+    const { UserAuth } = props;
+    UserAuth(values)
+      .then((resp) => {
+        if (resp.status === 200) {
+          enqueueSnackbar("Logged In Successfully", {
+            variant: "success",
+            autoHideDuration: 3000,
+          });
+          history.push("/Dashboard");
+        }
+      })
+      .catch((error) => {
+        if (error.response) {
+          enqueueSnackbar(error.response.data, {
+            persist: true,
+            variant: "error",
+          });
+        }
+      });
+  };
+
+  return (
+    <Formik
+      validationSchema={LoginSchema}
+      initialValues={initialValues}
+      onSubmit={onSubmit}
+    >
+      {({
+        handleSubmit,
+        handleChange,
+        handleBlur,
+        values,
+        errors,
+        touched,
+      }) => (
+        <Form onSubmit={handleSubmit} noValidate>
+          <h3>Sign In</h3>
+          <Form.Group>
+            <Form.Label>Email</Form.Label>
+            <Form.Control
+              type="email"
+              name="Email"
+              value={values.Email}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              isInvalid={touched.Email && errors.Email}
+              className="form-control"
+              placeholder="Enter Email Address"
+              as="input"
+            />
+            <Form.Control.Feedback type="invalid">
+              {errors.Email}
+            </Form.Control.Feedback>
+          </Form.Group>
+
+          <Form.Group>
+            <Form.Label>Password</Form.Label>
+            <Form.Control
+              type="Password"
+              name="Password"
+              value={values.Password}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              isInvalid={touched.Password && errors.Password}
+              className="form-control"
+              placeholder="Enter Password"
+              as="input"
+            />
+            <Form.Control.Feedback type="invalid">
+              {errors.Password}
+            </Form.Control.Feedback>
+          </Form.Group>
+          <button type="submit" className="btn btn-primary btn-block">
+            Submit
+          </button>
+
+          {/* <p className="forgot-password text-right text-white">
+            Forgot password?
+          </p> */}
+
+          <p className=" text-left text-dark">
+            Don't have account? <Link to="/Register"> Register</Link>
+          </p>
+        </Form>
+      )}
+    </Formik>
+  );
+};
+export default connect(mapStateToProps, { UserAuth })(Login);
